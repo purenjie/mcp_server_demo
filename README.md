@@ -34,10 +34,15 @@ mcp dev add.py
 
 ```bash
 cd golang_sse_demo
-go build
 
+// stdio 模式
+go build
 // 通过 command 方式，将二进制文件 golang_sse_demo 的路径作为执行路径
 // e.g. /Users/my/Projects/mcp_server_demo/golang_sse_demo
+
+// sse 模式
+go run main.go
+sse 地址: http://localhost:8080/sse
 ```
 
 
