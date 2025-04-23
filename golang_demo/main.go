@@ -3,19 +3,30 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"log"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 func main() {
+	var transport string
+	flag.StringVar(&transport, "t", "stdio", "Transport type (stdio or sse)")
+	flag.StringVar(
+		&transport,
+		"transport",
+		"stdio",
+		"Transport type (stdio or sse)",
+	)
+	flag.Parse()
+
 	// Create MCP server
 	s := server.NewMCPServer(
 		"Demo 🚀",
 		"1.0.0",
 	)
-
 	// Add tool
 	tool := mcp.NewTool("add",
 		mcp.WithDescription("Add two numbers"),
@@ -28,24 +39,26 @@ func main() {
 			mcp.Description("Second number"),
 		),
 	)
-
 	// Add tool handler
 	s.AddTool(tool, addHandler)
 
-	/*
-		Start the stdio server
-	*/
-	if err := server.ServeStdio(s); err != nil {
-		fmt.Printf("Server error: %v\n", err)
+	switch transport {
+	case "stdio":
+		if err := server.ServeStdio(s); err != nil {
+			log.Fatalf("Server error: %v\n", err)
+		}
+	case "sse":
+		sse := server.NewSSEServer(s, server.WithBaseURL("http://localhost:8080"))
+		log.Printf("SSE server listening on :8080")
+		if err := sse.Start(":8080"); err != nil {
+			log.Fatalf("Server error: %v", err)
+		}
+	default:
+		log.Fatalf(
+			"Invalid transport type: %s. Must be 'stdio' or 'sse'",
+			transport,
+		)
 	}
-
-	/*
-		Start the sse server
-	*/
-	// sse := server.NewSSEServer(s, server.WithBaseURL("http://localhost:8080"))
-	// if err := sse.Start(":8080"); err != nil {
-	// 	fmt.Printf("Server error: %v\n", err)
-	// }
 }
 
 func addHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
